@@ -27,7 +27,7 @@ public class Tree {
     }
     
     public Tree() throws IOException {
-    	tree = new TriangleMesh("res/models/bunny.ply", true, true);
+    	tree = new TriangleMesh("res/models/tree.ply", true, true);
     }
    
     public void draw(GL3 gl) {
