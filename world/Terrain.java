@@ -116,11 +116,11 @@ public class Terrain {
         //Return zero if object outside of the boundaries
         /**
          * (x_0, z_1)		(x_1,z_1)
-         * 			+------+
-         * 			-     +-
-         *			-   +  -
-         *			- +    -
-         *			+------+
+         * 		+------+
+         * 		-     +-
+         *		-   +  -
+         *		- +    -
+         *		+------+
          *  (x_0, z_0)		(x_1,z_0) 
          * 
          */
@@ -138,10 +138,10 @@ public class Terrain {
         int z_1 = (int)z;
         
         if(x - x_0 != 0) {
-        	 x_1 ++;
+        	x_1 ++;
         }
         if(z - z_0 != 0) {
-        	 z_1 ++;
+        	z_1 ++;
         }
         
         double h_0 = getGridAltitude(x_0, z_0);
@@ -155,7 +155,7 @@ public class Terrain {
         double a_3 = x_r * h_3;
         
         altitude = (float)((1 - z_r)*(a_0 + a_1) + z_r * (a_2 + a_3));
-//        System.out.println("altitude:" + width + "  " + depth + "   ");
+//        System.out.println("altitude:  " + altitude);
         
         return altitude;
     }
