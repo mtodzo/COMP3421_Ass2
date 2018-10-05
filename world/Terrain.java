@@ -30,11 +30,11 @@ public class Terrain {
     private int width;
     private int depth;
     private float[][] altitudes;
+    private float[][] normals;
     private List<Tree> trees;
     private List<Road> roads;
     private Vector3 sunlight;
     
-    private Texture textureGrass;
     private TriangleMesh mesh;
     
     private Shader shader;
@@ -65,7 +65,17 @@ public class Terrain {
     public Vector3 getSunlight() {
         return sunlight;
     }
-
+    
+    public void setNormal() {
+    	int index = 0;
+    	for(int x = 0; x < width - 1; x ++) {
+        	for(int z = 0; z < depth - 1; z ++) {
+        		double[] p_0 = {x, altitude(x,z), z};
+        		
+        	}
+    	}
+    }
+    
     /**
      * Set the sunlight direction. 
      * 
@@ -113,49 +123,55 @@ public class Terrain {
         float altitude = 0;
         // TODO: Implement this
         
-        //Return zero if object outside of the boundaries
         /**
+         *     P2			   P3
          * (x_0, z_1)		(x_1,z_1)
-         * 		+------+
-         * 		-     +-
-         *		-   +  -
-         *		- +    -
-         *		+------+
+         * 			+------+
+         * 			|     +|
+         *			|   +  |
+         *			| +    |
+         *			+------+
          *  (x_0, z_0)		(x_1,z_0) 
-         * 
+         * 		P0			   P1
          */
+        
+        //Return zero if object outside of the boundaries
         if(x < 0 || x > width || z < 0 || z > depth) {
-        	return 0.0f;
+        	return 0;
         }
+        
         
         //get remainder of non-integer points
         double x_r = x - (int)x;
         double z_r = z - (int)z;
         
         int x_0 = (int)x; 
-        int x_1 = (int)x;
         int z_0 = (int)z;
-        int z_1 = (int)z;
         
-        if(x - x_0 != 0) {
-        	x_1 ++;
+        if (x - x_0 != 0 && z - z_0 != 0) {
+        	int x_1 = x_0 +1;
+        	double a_0 = getGridAltitude(x_0, z_0);
+        	double a_1 = getGridAltitude(x_1, z_0);
+        	altitude = (float)((1 - x_r)*a_0 + x_r * a_1);
+        } else if (x - x_0 != 0) {
+        	int x_1 = x_0 +1;
+        	double a_0 = getGridAltitude(x_0, z_0);
+        	double a_1 = getGridAltitude(x_1, z_0);
+        	altitude = (float)((1 - x_r)*a_0 + x_r * a_1);
+        } else if(z - z_0 != 0) {
+        	int z_1 = z_0 +1;
+        	double a_0 = getGridAltitude(x_0, z_0);
+        	double a_1 = getGridAltitude(x_0, z_1);
+        	altitude = (float)((1 - z_r)*a_0 + z_r * a_1);
+        } else {
+        	altitude = (float) getGridAltitude(x_0, z_0);
         }
-        if(z - z_0 != 0) {
-        	z_1 ++;
-        }
         
-        double h_0 = getGridAltitude(x_0, z_0);
-        double h_1 = getGridAltitude(x_1, z_0);
-        double h_2 = getGridAltitude(x_0, z_1);
-        double h_3 = getGridAltitude(x_1, z_1);
+//        double a_0 = (1 - x_r)*getGridAltitude(x_0, z_0) + x_r * getGridAltitude(x_1, z_0);;
+//        double a_1 = (1 - x_r)* getGridAltitude(x_0, z_1) + x_r * getGridAltitude(x_1, z_1);        
+//        altitude = (float)((1 - z_r)*a_0 + z_r * a_1);
         
-        double a_0 = (1 - x_r)*h_0;
-        double a_1 = x_r * h_1;
-        double a_2 = (1 - x_r)*h_2;
-        double a_3 = x_r * h_3;
-        
-        altitude = (float)((1 - z_r)*(a_0 + a_1) + z_r * (a_2 + a_3));
-//        System.out.println("altitude:  " + altitude);
+//        System.out.println("myNormals: " + myNormals[0][2]);
         
         return altitude;
     }
@@ -187,65 +203,68 @@ public class Terrain {
        
 
     public void draw(GL3 gl) {
-    	textureGrass = new Texture(gl, "res/textures/grass.bmp","bmp", true);
-
-//    	shader =  new Shader(gl, "shaders/vertex_tex_3d.glsl","shaders/fragment_tex_3d.glsl");
-//    	shader.use(gl);
+    	Texture textureTerrain = new Texture(gl, "res/textures/grass.bmp","bmp", true);
 //    	
-    	Shader.setPenColor(gl, Color.red);
-    	Shader.setInt(gl, "tex", 0);
+//    	Shader.setPenColor(gl, Color.red);
+//    	Shader.setInt(gl, "tex", 0);
+//    	
+////    	gl.glEnable(GL.GL_TEXTURE_2D);
+//    	gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL3.GL_LINE);
+////    	gl.glLineWidth(6.0f);
+//    	
+//    	gl.glActiveTexture(GL.GL_TEXTURE0);
+//    	gl.glBindTexture(GL.GL_TEXTURE_2D, textureTerrain.getId());
     	
-//    	gl.glEnable(GL.GL_TEXTURE_2D);
-    	gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL3.GL_LINE);
-    	gl.glLineWidth(6.0f);
-    	
-    	gl.glActiveTexture(GL.GL_TEXTURE0);
-    	gl.glBindTexture(GL.GL_TEXTURE_2D, textureGrass.getId());
-    	
-    	List<Point3D> grassVerts = new ArrayList<>();
-    	List<Point3D> triangleVerts = new ArrayList<>(); 
-//        List<Point2D> grassTexCoords = new ArrayList<>();
-        List<Integer> grassIndices = Arrays.asList(0,1,2, 0,3,2);
+    	List<Point3D> TerrainVerts = new ArrayList<>();
+//    	List<Vector3> TerrainNormals = new ArrayList<Vector3>();
+        List<Point2D> TerrainTexCoords = new ArrayList<>();
+        List<Integer> TerrainIndices = Arrays.asList(0,1,3, 0,3,2);
         
         for(int x = 0; x < width - 1; x ++) {
         	for(int z = 0; z < depth - 1; z ++) {
-        		Point3D p_0 = new Point3D(x, altitudes[x][z], z);
-        		Point3D p_1 = new Point3D(x, altitudes[x][z+1], z+1);
-        		Point3D p_2 = new Point3D(x+1, altitudes[x+1][z+1], z+1);
-        		Point3D p_3 = new Point3D(x+1, altitudes[x+1][z], z);
         		
-//	     		grassVerts.add(new Point3D(x, altitudes[x][z], z));			//P0
-//	     		grassVerts.add(new Point3D(x, altitudes[x][z+1], z+1));		//P1
-//	     		grassVerts.add(new Point3D(x+1, altitudes[x+1][z+1], z+1));	//P2
-//	     		grassVerts.add(new Point3D(x+1, altitudes[x+1][z], z));;	//P3
-//	     		
-//	            grassTexCoords.add(new Point2D(0, 0));
-//	            grassTexCoords.add(new Point2D(0, 1));
-//	            grassTexCoords.add(new Point2D(1, 0));
-//	            grassTexCoords.add(new Point2D(1, 1));
-	                 
-	     		triangleVerts.add(p_0);
-	     		triangleVerts.add(p_1);
-	     		triangleVerts.add(p_2);
+//        		TerrainVerts.add(new Point3D(x, altitudes[x][z], z));			//P0
+//        		TerrainVerts.add(new Point3D(x, altitudes[x][z+1], z+1));		//P1
+//        		TerrainVerts.add(new Point3D(x+1, altitudes[x+1][z], z));		//P2
+//        		TerrainVerts.add(new Point3D(x+1, altitudes[x+1][z+1], z+1));;	//P3
 	     		
-	     		triangleVerts.add(p_0);
-	     		triangleVerts.add(p_2);
-	     		triangleVerts.add(p_3);
+        		//p0->p1->p3 ccw triangle
+        		TerrainVerts.add(new Point3D(x, altitude(x,z), z));				//P0
+        		TerrainVerts.add(new Point3D(x+1, altitude(x+1,z), z));			//P1
+        		TerrainVerts.add(new Point3D(x+1, altitude(x+1,z+1), z+1));;	//P3
+        		//p0->p3->p2 ccw triangle
+        		TerrainVerts.add(new Point3D(x, altitude(x,z), z));				//P0
+        		TerrainVerts.add(new Point3D(x+1, altitude(x+1,z+1), z+1));;	//P3
+        		TerrainVerts.add(new Point3D(x, altitude(x,z+1), z+1));			//P2
 	     		
-	     		
-//	            System.out.println("grassVerts:" + grassVerts);
+        		TerrainTexCoords.add(new Point2D(0,0));
+        		TerrainTexCoords.add(new Point2D(1,0));
+        		TerrainTexCoords.add(new Point2D(1,1));
+        		
+        		TerrainTexCoords.add(new Point2D(0,0));
+        		TerrainTexCoords.add(new Point2D(1,1));
+        		TerrainTexCoords.add(new Point2D(0,1));
+        		
+        		mesh = new TriangleMesh(TerrainVerts, TerrainIndices, false, TerrainTexCoords);
+                mesh.init(gl);
 	     	}
 	     }
-//        System.out.println("grassVerts:" + grassVerts.size());
+          System.out.println("TerrainVerts:" + TerrainVerts.size());
+//        mesh = new TriangleMesh(TerrainVerts, true);
+//        mesh.init(gl);
         
+        Shader.setPenColor(gl, Color.red);
+        Shader.setInt(gl, "tex", 0);
+        gl.glActiveTexture(GL.GL_TEXTURE0);
+        gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL3.GL_LINE);
+        gl.glBindTexture(GL.GL_TEXTURE_2D, textureTerrain.getId());
         
-        mesh = new TriangleMesh(triangleVerts, true);
-        
-        mesh.init(gl);
-        mesh.draw(gl);
+        CoordFrame3D view = CoordFrame3D.identity().translate(0, 0, -2);
+      
+        mesh.draw(gl, view);
 //    	gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL3.GL_LINE);
 
     }
-
+    
 
 }
