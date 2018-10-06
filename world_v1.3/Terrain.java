@@ -278,9 +278,8 @@ public class Terrain {
         	firstColumn = false;
 	     }
 
-        TriangleMesh segment = new TriangleMesh(points, indices, true, textCoords);
-        segment.init(gl);
-        meshes.add(segment);
+        terrainMesh = new TriangleMesh(points, indices, true, textCoords);
+        terrainMesh.init(gl);
         
     }
     
