@@ -57,7 +57,7 @@ public class World extends Application3D implements MouseListener, KeyListener{
      * @throws FileNotFoundException
      */
     public static void main(String[] args) throws FileNotFoundException {
-        Terrain terrain = LevelIO.load(new File("res/worlds/test4.json"));
+        Terrain terrain = LevelIO.load(new File("res/worlds/test1.json"));
         World world = new World(terrain);
         world.start();
     }
@@ -100,14 +100,16 @@ public class World extends Application3D implements MouseListener, KeyListener{
 	// Set Camera
 	public void setCamera(GL3 gl) {
 		// Set the camera is move by a person
-		// Camera inside the terrain, alltitude is terrain alltitue + 0.3f(height of person)
+		// Camera altitude should be height of person
 		
-		if (x >= 0 || x <= width -1 || z >= 0 || z <= depth -1) {
+/*		if (x >= 0 || x <= width -1 || z >= 0 || z <= depth -1) {
 			y = terrain.altitude(x, z) + 0.3f;
 		} else {
 			y = 0.3f;
 		
-		}
+		}*/
+		
+		y = terrain.altitude(x,z) + 1.5f;
 
 		CoordFrame3D camera = CoordFrame3D.identity()
 				.rotateY(-rotate)
@@ -164,12 +166,12 @@ public class World extends Application3D implements MouseListener, KeyListener{
 	public void keyPressed(KeyEvent e) {
 		switch (e.getKeyCode()) {
 			case KeyEvent.VK_UP:
-				x -=  camera_rotation * Math.sin(Math.toRadians(rotate));
-				z -= camera_rotation * Math.cos(Math.toRadians(rotate));
+				x -=  camera_rotation * Math.sin(Math.toRadians(rotate))*0.1;
+				z -= camera_rotation * Math.cos(Math.toRadians(rotate))*0.1;
 				break;
 			case KeyEvent.VK_DOWN:
-				x += camera_rotation * Math.sin(Math.toRadians(rotate));
-				z += camera_rotation * Math.cos(Math.toRadians(rotate));
+				x += camera_rotation * Math.sin(Math.toRadians(rotate))*0.1;
+				z += camera_rotation * Math.cos(Math.toRadians(rotate))*0.1;
 				break;
 			case KeyEvent.VK_LEFT:
 				rotate += camera_position;

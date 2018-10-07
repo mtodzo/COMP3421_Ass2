@@ -139,7 +139,7 @@ public class Terrain {
         
         
         //Return zero if object outside of the boundaries
-        if(x < 0 || x > width || z < 0 || z > depth) {
+        if(x < 0 || x > width - 1 || z < 0 || z > depth - 1) {
         	return 0;
         }
         
