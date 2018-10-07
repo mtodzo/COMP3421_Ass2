@@ -102,10 +102,10 @@ public class World extends Application3D implements MouseListener, KeyListener{
 		// Set the camera is move by a person
 		// Camera altitude should be height of person
 		
-		float y = (x >= 0 || x <= width - 1 || z >= 0 || z <= depth - 1)?terrain.altitude(x, z) + 0.8f: 0.8f;
+// 		float y = (x >= 0 || x <= width - 1 || z >= 0 || z <= depth - 1)?terrain.altitude(x, z) + 0.8f: 0.8f;
 		
 		
-//		y = terrain.altitude(x,z) + 2f;
+		y = terrain.altitude(x,z) + 0.8f;
 
 		CoordFrame3D camera = CoordFrame3D.identity()
 				.rotateY(-rotate)
