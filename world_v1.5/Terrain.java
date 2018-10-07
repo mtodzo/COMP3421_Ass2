@@ -30,13 +30,11 @@ public class Terrain {
     private Vector3 sunlight;
 
     private TriangleMesh terrainMesh;
-    
     private List<TriangleMesh> meshes =  new ArrayList<>();
     
     private Shader shader;
     
-    private Texture TerrainTexture;
-    private Texture TreeTexture;
+    private Texture terrainTexture;
     
     /**
      * Create a new terrain
@@ -52,15 +50,7 @@ public class Terrain {
         roads = new ArrayList<Road>();
         this.sunlight = sunlight;
     }
-    
-    public int getwidth() {
-    	return width;
-    }
-    
-    public int getdepth() {
-    	return depth;
-    }
-    
+
     public List<Tree> trees() {
         return trees;
     }
@@ -116,27 +106,21 @@ public class Terrain {
      * @param z
      * @return
      */
-   
-    
     public float altitude(float x, float z) {
         float altitude = 0;
         // TODO: Implement this
         
         /**
-         *     P0				P2
-         * (x_0, z_0)		(x_1,z_0)
+         *     P2			   P3
+         * (x_0, z_1)		(x_1,z_1)
          * 			+------+
-         * 			|    / |
-         *			| L /  |
-         *			|  /   |
-         *			| /  R |
+         * 			|     +|
+         *			|   +  |
+         *			| +    |
          *			+------+
-         *  (x_0, z_1)		(x_1,z_1) 
-         * 		P1			   P3
-         * 
-         * 
+         *  (x_0, z_0)		(x_1,z_0) 
+         * 		P0			   P1
          */
-        
         
         //Return zero if object outside of the boundaries
         if(x < 0 || x > width || z < 0 || z > depth) {
@@ -148,38 +132,33 @@ public class Terrain {
         double x_r = x - (int)x;
         double z_r = z - (int)z;
         
-        //get floor of the points
         int x_0 = (int)x; 
-        int x_1 = (int)x + 1; 
         int z_0 = (int)z;
-        int z_1 = (int)z + 1;
         
-        // check points whether it is on diagonal line or not
-        double diagonal_check = x_r + z_r;
-        
-        // calculate y value
-        double y_0 = getGridAltitude(x_0, z_0);		
-    	double y_1 = getGridAltitude(x_0, z_1);
-    	double y_2 = getGridAltitude(x_1, z_0);
-    	double y_3 = getGridAltitude(x_1, z_1);
-    	
-    	
-    	//bilinearInterpolate
-    	double y_01 = (float)((1 - z_r)*y_1 + z_r * y_0);
-    	double y_12 = (float)((1 - z_r)*y_2 + z_r * y_1);
-    	double y_23 = (float)((1 - z_r)*y_3 + z_r * y_2);
-    	double x_01 = (float)((1 - z_r)*x_0 + z_r * x_0);
-    	double x_12 = (float)((1 - z_r)*x_1 + z_r * x_0);
-    	double x_23 = (float)((1 - z_r)*x_1 + z_r * x_1);
-        
-    	//
-        if(diagonal_check == 1) {  				// point on diagonal line  p1 -> p2, linearInterpolate
-        	altitude = (float)((1 - z_r)*y_2 + z_r * y_1);		
-        } else if(diagonal_check < 1){			// point on L triangle  p0 -> p1 -> p2, bilinearInterpolate
-        	altitude = (float)(((x - x_01) / (x_12 - x_01)) * y_12 + (((x_12 - x)/ (x_12 - x_01)) * y_01));
-        } else {								// point on R triangle  p1 -> p3 -> p2, bilinearInterpolate
-        	altitude = (float)(((x - x_12) / (x_23 - x_12)) * y_23 + (((x_23 - x)/ (x_23 - x_12)) * y_12));
+        if (x - x_0 != 0 && z - z_0 != 0) {
+        	int x_1 = x_0 +1;
+        	double a_0 = getGridAltitude(x_0, z_0);
+        	double a_1 = getGridAltitude(x_1, z_0);
+        	altitude = (float)((1 - x_r)*a_0 + x_r * a_1);
+        } else if (x - x_0 != 0) {
+        	int x_1 = x_0 +1;
+        	double a_0 = getGridAltitude(x_0, z_0);
+        	double a_1 = getGridAltitude(x_1, z_0);
+        	altitude = (float)((1 - x_r)*a_0 + x_r * a_1);
+        } else if(z - z_0 != 0) {
+        	int z_1 = z_0 +1;
+        	double a_0 = getGridAltitude(x_0, z_0);
+        	double a_1 = getGridAltitude(x_0, z_1);
+        	altitude = (float)((1 - z_r)*a_0 + z_r * a_1);
+        } else {
+        	altitude = (float) getGridAltitude(x_0, z_0);
         }
+        
+//        double a_0 = (1 - x_r)*getGridAltitude(x_0, z_0) + x_r * getGridAltitude(x_1, z_0);;
+//        double a_1 = (1 - x_r)* getGridAltitude(x_0, z_1) + x_r * getGridAltitude(x_1, z_1);        
+//        altitude = (float)((1 - z_r)*a_0 + z_r * a_1);
+        
+//        System.out.println("myNormals: " + myNormals[0][2]);
         
         return altitude;
     }
@@ -208,11 +187,58 @@ public class Terrain {
         Road road = new Road(width, spine);
         roads.add(road);        
     }
+    
+    private void initTerainStrips(GL3 gl) {
+    	
+    	terrainTexture = new Texture(gl, "res/textures/grass.bmp", "bmp", true);
+    	
+        // Define points, indices and texture coordinates
+        boolean first;
+        
+        for(int x = 0; x < width - 1; x ++) {
+            List<Point3D> points = new ArrayList<>();
+            List<Integer> indices = new ArrayList<>();
+            List<Point2D> textCoords = new ArrayList<>();
+            first = true;
+            
+        	for(int z = 0; z < depth; z ++) {
+        		
+        		// Add points
+        		points.add(new Point3D(x, (float) getGridAltitude(x,z), z));
+        		points.add(new Point3D(x+1, (float) getGridAltitude(x+1,z), z));
+        		
+        		//Add texture Coordinates
+        		textCoords.add(new Point2D(z,0));
+        		textCoords.add(new Point2D(z,1));
+        		
+        		//Set up indices between current row and subsequent row. Ignore on first pass
+        		if (!first) {
+        			//Top left triangle
+	        		indices.add(2*z-2);
+	        		indices.add(2*z);
+	        		indices.add(2*z-1);
+	        		
+	        		//Bottom right triangle
+	        		indices.add(2*z-1);
+	        		indices.add(2*z);
+	        		indices.add(2*z+1);
+        		} else {
+        			first = false;
+        		}
+        		
+	     	}
+
+            TriangleMesh segment = new TriangleMesh(points, indices, true, textCoords);
+            //TriangleMesh segment = new TriangleMesh(points, indices, true);
+            segment.init(gl);
+            meshes.add(segment);
+	     }
+
+    }
 
     private void initTerain(GL3 gl) {
-    	//Set Texture
-    	TerrainTexture = new Texture(gl, "res/textures/grass.bmp", "bmp", true);
-    	TreeTexture = new Texture(gl, "res/textures/rock.bmp", "bmp", true);
+    	
+    	terrainTexture = new Texture(gl, "res/textures/grass.bmp", "bmp", true);
     	
         // Define points, indices and texture coordinates
         boolean firstRow = true;
@@ -259,18 +285,19 @@ public class Terrain {
     
     public void init(GL3 gl) {
 
-        shader = new Shader(gl, "shaders/vertex_tex_phong.glsl", "shaders/fragment_tex_phong.glsl");
+        shader = new Shader(gl, "shaders/vertex_tex_phong.glsl",
+                "shaders/fragment_tex_phong.glsl");
         shader.use(gl);
         
         // Set the lighting properties (sunlight as the light source?)
-        Shader.setPoint3D(gl, "lightPos", new Point3D(getSunlight().getX(), getSunlight().getY(), getSunlight().getZ()));
+        Shader.setPoint3D(gl, "lightPos", getSunlight().asPoint3D());
         Shader.setColor(gl, "lightIntensity", Color.WHITE);
-        Shader.setColor(gl, "ambientIntensity", new Color(1f, 0.1f, 0.9f));
+        Shader.setColor(gl, "ambientIntensity", new Color(0.1f, 0.1f, 0.1f));
         
         // Set the material properties
         Shader.setColor(gl, "ambientCoeff", Color.WHITE);
         Shader.setColor(gl, "diffuseCoeff", new Color(0.2f, 0.2f, 0.2f));
-        Shader.setColor(gl, "specularCoeff", new Color(0f, 1f, 0f));
+        Shader.setColor(gl, "specularCoeff", new Color(0.1f, 0.1f, 0.1f));
         Shader.setFloat(gl, "phongExp", 16f);
         
         initTerain(gl);
@@ -280,14 +307,19 @@ public class Terrain {
         }
     }   
         
-    public void display(GL3 gl, float rotateX, float rotateY) {
+    public void display(GL3 gl, float posX, float posZ, float rotation) {
         
     	Shader.setPenColor(gl, Color.WHITE);
         
         Shader.setInt(gl, "tex", 0);
         gl.glActiveTexture(GL.GL_TEXTURE0);
-
-    	CoordFrame3D view = CoordFrame3D.identity().translate(-width/2, 0, depth/2).rotateX(rotateX).rotateY(rotateY);
+        
+        float posY = altitude(posX, -posZ);
+        System.out.println( posX );
+        System.out.println( posZ );
+        System.out.println( posY );
+        System.out.println("============");
+    	CoordFrame3D view = CoordFrame3D.identity().rotateY(rotation).translate(-posX, -posY-2, posZ);
 //        Shader.setViewMatrix(gl, view.getMatrix());
 
     	drawTerrain(gl, view);
@@ -295,21 +327,17 @@ public class Terrain {
     	drawTrees(gl,view);
     	
     	}
-    
 
     private void drawTerrain(GL3 gl, CoordFrame3D view) {
         
     	//Texture option
-        gl.glBindTexture(GL.GL_TEXTURE_2D, TerrainTexture.getId());
+        gl.glBindTexture(GL.GL_TEXTURE_2D, terrainTexture.getId());
     	
         terrainMesh.draw(gl, view);
     }
     
     private void drawTrees(GL3 gl, CoordFrame3D view) {
     	// TODO
-    	//Texture option
-        gl.glBindTexture(GL.GL_TEXTURE_2D, TreeTexture.getId());
-        
         for(Tree t : trees){
         	t.display(gl, view);
         }

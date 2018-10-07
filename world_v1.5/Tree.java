@@ -25,8 +25,6 @@ public class Tree {
     
     private Texture texture;
     
-    private int count = 0;
-    
     public Tree(float x, float y, float z) {
         position = new Point3D(x, y, z);
     }
@@ -66,8 +64,10 @@ public class Tree {
     public void display(GL3 gl, CoordFrame3D view) {
     	
     	CoordFrame3D modelFrame = view
-    			.translate(position.getX(),position.getY()+0.7f ,position.getZ())
+    			.translate(getPosition().getX(),getPosition().getY()+0.7f ,getPosition().getZ())
     			.scale(0.15f, 0.15f, 0.15f);
+ 
+//        System.out.println(getPosition().getX()+"  "+getPosition().getY()+"  "+getPosition().getZ());
         
         model.draw(gl, modelFrame);
      }

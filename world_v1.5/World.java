@@ -10,7 +10,6 @@ import com.jogamp.newt.event.MouseListener;
 import com.jogamp.opengl.GL3;
 
 import unsw.graphics.Application3D;
-import unsw.graphics.CoordFrame3D;
 import unsw.graphics.Matrix4;
 import unsw.graphics.Shader;
 import unsw.graphics.geometry.Point2D;
@@ -22,32 +21,21 @@ import unsw.graphics.geometry.Point2D;
  *
  * @author malcolmr
  */
-public class World extends Application3D implements MouseListener, KeyListener{
+public class World extends Application3D implements KeyListener{
 
     private Terrain terrain;
     
-    private float rotateX = 0;
-    private float rotateY = 0;
-    
-    private float key_rotate;
-    
-    private int width;
-    private int depth;
-    
-    private float x;
-    private float y;
-    private float z = 8;
+    private float positionX = 0;
+    private float positionZ = 0;
+    private float rotation = 135;
     
     private Point2D myMousePoint = null;
     private static final int ROTATION_SCALE = 1;
-    private static final float camera_rotation = 0.5f;
-    private static final float angle_rotation = 5f;
 
     public World(Terrain terrain) {
     	super("Assignment 2", 800, 600);
         this.terrain = terrain;
-        this.width = terrain.getwidth();
-        this.depth = terrain.getdepth();
+   
     }
    
     /**
@@ -57,7 +45,7 @@ public class World extends Application3D implements MouseListener, KeyListener{
      * @throws FileNotFoundException
      */
     public static void main(String[] args) throws FileNotFoundException {
-        Terrain terrain = LevelIO.load(new File("res/worlds/test4.json"));
+        Terrain terrain = LevelIO.load(new File(args[0]));
         World world = new World(terrain);
         world.start();
     }
@@ -65,9 +53,7 @@ public class World extends Application3D implements MouseListener, KeyListener{
 	@Override
 	public void display(GL3 gl) {
 		super.display(gl);
-		
-		setCamera(gl);
-		terrain.display(gl, rotateX, rotateY);
+		terrain.display(gl, positionZ, positionX, rotation);
 	}
 
 	@Override
@@ -79,9 +65,9 @@ public class World extends Application3D implements MouseListener, KeyListener{
 	@Override
 	public void init(GL3 gl) {
 		super.init(gl);
-		getWindow().addMouseListener(this);
 		getWindow().addKeyListener(this);
 		terrain.init(gl);
+		
 	}
 
 	@Override
@@ -90,31 +76,47 @@ public class World extends Application3D implements MouseListener, KeyListener{
         Shader.setProjMatrix(gl, Matrix4.perspective(60, width/(float)height, 1, 100));
 	}
 	
-	
-	/*	
-	 * 	Camera with Mouse & Key Controller
-	 */
-	
-	// Set Camera
-	public void setCamera(GL3 gl) {
-		// Set the camera is move by a person
-		// Camera altitude should be height of person
-//		y = -terrain.altitude(-x, -z) - 1f;;
-		
-		if (x >= 0 || x <= width || z >= 0 || z <= depth) {
-			y = -terrain.altitude(-x, -z) - 1f;
-		} else {
-			y = -1f;
-		}
-		
-		CoordFrame3D camera = CoordFrame3D.identity()
-				.rotateY(-key_rotate)
-				.translate(-x, y, -z);
-		
-		Shader.setViewMatrix(gl, camera.getMatrix());
-	}
+    @Override
+    public void keyPressed(KeyEvent e) {
+        switch (e.getKeyCode()) {
+        
+        case KeyEvent.VK_UP:
+            // Move forward
+        	positionZ = positionZ + (float) Math.sin(Math.toRadians(rotation))*0.05f;
+        	positionX = positionX + (float) Math.cos(Math.toRadians(rotation))*0.05f;
+            break;
+        case KeyEvent.VK_DOWN:
+            // Move Back
+        	positionZ = positionZ - (float) Math.sin(Math.toRadians(rotation))*0.05f;
+        	positionX = positionX - (float) Math.cos(Math.toRadians(rotation))*0.05f;
+            break;
+        case KeyEvent.VK_LEFT:
+            // Turn left
+        	rotation = rotation - 1;
+        	if (rotation < 0) {
+        		rotation = rotation + 360;
+        	}
+            break;
+        case KeyEvent.VK_RIGHT:
+            // Turn right
+        	rotation = rotation + 1;
+        	if (rotation >= 360) {
+        		rotation = rotation - 360;
+        	}
+            break;
+        default:
+        	//Do nothing
+            break;
+        }
 
-	// Mouse Controller
+    }
+
+    @Override
+    public void keyReleased(KeyEvent arg0) {
+    	
+    }
+	
+	/*
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		Point2D p = new Point2D(e.getX(), e.getY());
@@ -154,48 +156,5 @@ public class World extends Application3D implements MouseListener, KeyListener{
 
     @Override
     public void mouseWheelMoved(MouseEvent e) { }
-    
-    // Key Controller
-    @Override
-	public void keyPressed(KeyEvent e) {
-		switch (e.getKeyCode()) {
-			case KeyEvent.VK_UP:
-				x -= camera_rotation * Math.sin(Math.toRadians(key_rotate));
-				z -= camera_rotation * Math.cos(Math.toRadians(key_rotate));
-				break;
-			case KeyEvent.VK_DOWN:
-				x += camera_rotation * Math.sin(Math.toRadians(key_rotate));
-				z += camera_rotation * Math.cos(Math.toRadians(key_rotate));
-				break;
-			case KeyEvent.VK_LEFT:
-				key_rotate += angle_rotation;
-				break;
-			case KeyEvent.VK_RIGHT:
-				key_rotate -= angle_rotation;
-				break;
-			case KeyEvent.VK_A:
-				x -= camera_rotation;
-				break;
-			case KeyEvent.VK_D:
-				x += camera_rotation;
-				break;	
-			case KeyEvent.VK_W:
-				y -= camera_rotation;
-				break;
-			case KeyEvent.VK_S:
-				y += camera_rotation;
-				break;
-			default:
-				break;
-			
-		}
-	}
-	
-    @Override
-    public void keyReleased(KeyEvent e) {
-	}
-    
-    public void keyTyped(KeyEvent e) {
-	}
-    
+	*/
 }
