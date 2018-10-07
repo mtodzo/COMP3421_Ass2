@@ -100,7 +100,7 @@ public class World extends Application3D implements MouseListener, KeyListener{
 	// Set Camera
 	public void setCamera(GL3 gl) {
 		// Set the camera is move by a person
-		// Camera altitude should be height of person
+		// Camera inside the terrain, alltitude is terrain alltitue + 0.3f(height of person)
 		
 		if (x >= 0 || x <= width -1 || z >= 0 || z <= depth -1) {
 			y = terrain.altitude(x, z) + 0.3f;
